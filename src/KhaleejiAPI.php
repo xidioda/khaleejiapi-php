@@ -139,13 +139,16 @@ class KhaleejiAPI
                         'Network error: ' . $e->getMessage(),
                         0,
                         'NETWORK_ERROR',
+                        'Network error: ' . $e->getMessage(),
+                        'خطأ في الشبكة: ' . $e->getMessage(),
                     );
                 }
 
                 $statusCode = $response->getStatusCode();
                 $body = json_decode($response->getBody()->getContents(), true);
                 $errorCode = $body['error']['code'] ?? 'SERVER_ERROR';
-                $errorMessage = $body['error']['message'] ?? 'Unknown error';
+                $errorMessageEn = $body['error']['messageEn'] ?? $body['error']['message'] ?? 'Unknown error';
+                $errorMessageAr = $body['error']['messageAr'] ?? $errorMessageEn;
 
                 $rateLimitInfo = [
                     'limit' => $response->getHeaderLine('X-RateLimit-Limit') ?: null,
@@ -155,9 +158,11 @@ class KhaleejiAPI
 
                 if ($statusCode === 429) {
                     $lastException = new KhaleejiAPIException(
-                        "Rate limited. Retry after {$rateLimitInfo['reset']} seconds",
+                        $errorMessageEn,
                         429,
-                        'RATE_LIMITED',
+                        $errorCode,
+                        $errorMessageEn,
+                        $errorMessageAr,
                         $rateLimitInfo,
                     );
                     if ($attempt < $this->maxRetries) {
@@ -167,10 +172,10 @@ class KhaleejiAPI
                 }
 
                 match ($statusCode) {
-                    401 => throw new KhaleejiAPIException('Invalid or missing API key', 401, 'UNAUTHORIZED'),
-                    403 => throw new KhaleejiAPIException($errorMessage, 403, 'FORBIDDEN'),
-                    404 => throw new KhaleejiAPIException('Resource not found', 404, 'NOT_FOUND'),
-                    default => throw new KhaleejiAPIException($errorMessage, $statusCode, $errorCode),
+                    401 => throw new KhaleejiAPIException($errorMessageEn, 401, $errorCode, $errorMessageEn, $errorMessageAr),
+                    403 => throw new KhaleejiAPIException($errorMessageEn, 403, $errorCode, $errorMessageEn, $errorMessageAr),
+                    404 => throw new KhaleejiAPIException($errorMessageEn, 404, $errorCode, $errorMessageEn, $errorMessageAr),
+                    default => throw new KhaleejiAPIException($errorMessageEn, $statusCode, $errorCode, $errorMessageEn, $errorMessageAr),
                 };
             }
         }

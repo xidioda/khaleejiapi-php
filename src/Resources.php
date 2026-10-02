@@ -35,21 +35,24 @@ class ValidationResource
     }
 
     /** Validate a VAT/TRN number */
-    public function validateVAT(string $trn): array
+    public function validateVAT(string $trn, ?string $countryCode = null): array
     {
-        return $this->client->get('/vat/validate', ['trn' => $trn]);
+        return $this->client->get('/vat/validate', [
+            'trn' => $trn,
+            'country' => $countryCode,
+        ]);
     }
 
     /** Validate a UAE Emirates ID */
     public function validateEmiratesID(string $id): array
     {
-        return $this->client->get('/validation/emirates-id', ['id' => $id]);
+        return $this->client->get('/emirates-id/validate', ['id' => $id]);
     }
 
     /** Validate a Saudi National ID or Iqama */
     public function validateSaudiID(string $id): array
     {
-        return $this->client->get('/validation/saudi-id', ['id' => $id]);
+        return $this->client->get('/saudi-id/validate', ['id' => $id]);
     }
 
     /**
@@ -58,7 +61,7 @@ class ValidationResource
      */
     public function validateSaudiIDBatch(array $ids): array
     {
-        return $this->client->post('/validation/saudi-id', ['ids' => $ids]);
+        return $this->client->post('/saudi-id/validate', ['ids' => $ids]);
     }
 }
 
@@ -81,10 +84,14 @@ class GeoResource
         return $this->client->get('/timezone', ['location' => $location]);
     }
 
-    /** Geocode an address */
-    public function geocode(string $address): array
+    /** Geocode an address or coordinates */
+    public function geocode(string $query, ?string $country = null, ?string $lang = null): array
     {
-        return $this->client->get('/geocode', ['address' => $address]);
+        return $this->client->get('/geocode', [
+            'q' => $query,
+            'country' => $country,
+            'lang' => $lang,
+        ]);
     }
 }
 
@@ -118,11 +125,19 @@ class FinanceResource
     }
 
     /** Get public holidays for a GCC country */
-    public function getHolidays(string $country = 'AE', ?int $year = null): array
-    {
+    public function getHolidays(
+        string $country = 'AE',
+        ?int $year = null,
+        ?string $mode = null,
+        ?string $date = null,
+        ?int $month = null,
+    ): array {
         return $this->client->get('/holidays', [
             'country' => $country,
             'year' => $year !== null ? (string) $year : null,
+            'mode' => $mode,
+            'date' => $date,
+            'month' => $month !== null ? (string) $month : null,
         ]);
     }
 
@@ -240,11 +255,13 @@ class UtilityResource
         ?string $ip = null,
         ?string $email = null,
         ?string $phone = null,
+        ?string $name = null,
     ): array {
         $body = [];
         if ($ip !== null) $body['ip'] = $ip;
         if ($email !== null) $body['email'] = $email;
         if ($phone !== null) $body['phone'] = $phone;
+        if ($name !== null) $body['name'] = $name;
 
         return $this->client->post('/fraud/check', $body);
     }
